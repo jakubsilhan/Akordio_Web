@@ -1,0 +1,4 @@
+/* Set a CSS variable for the font */
+:root {
+  --font-primary: 'Roboto', sans-serif;
+}

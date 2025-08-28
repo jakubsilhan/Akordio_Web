@@ -6,3 +6,4 @@ torchvision
 pydantic
 librosa
 numpy
+flask-cors

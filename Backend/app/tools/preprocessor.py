@@ -13,6 +13,7 @@ class Preprocess():
         
         # Load audio
         audio_buffer = io.BytesIO(audio)
+        audio_buffer.seek(0)
         x, sr = librosa.load(audio_buffer, sr=self.config.data.preprocess.sampling_rate)
 
         # Extract features

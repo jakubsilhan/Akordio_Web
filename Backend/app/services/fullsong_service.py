@@ -17,9 +17,9 @@ class Fullsong_Service:
 
         # Loading models
         self.models: Dict[str, Tuple[Model, Config]] = {
-            "majmin": self._load_model(r"app\neural_nets\fullsong\majmin"),
-            "majmin7": self._load_model(r"app\neural_nets\fullsong\majmin7"),
-            "complex": self._load_model(r"app\neural_nets\fullsong\complex")
+            "majmin": self._load_model(os.path.join("app", "neural_nets", "fullsong", "majmin")),
+            "majmin7": self._load_model(os.path.join("app", "neural_nets", "fullsong", "majmin7")),
+            "complex": self._load_model(os.path.join("app", "neural_nets", "fullsong", "complex"))
         }
 
     def _load_model(self, path) -> Tuple[Model, Config]:

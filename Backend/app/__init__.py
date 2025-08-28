@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from flasgger import Swagger
 from app.controllers.fullsong_controller import bp as fullsong_bp
 from app.controllers.online_controller import bp as online_bp
@@ -10,6 +11,10 @@ def create_app():
     app = Flask(__name__)
     # Some env thing
     # env = Environment(app)
+
+    # Allow origins
+    CORS(app)
+    # CORS(app, resources={r"/*": {"origins": "*"}})
 
     # Initialize services
     fullsong_service = Fullsong_Service()
