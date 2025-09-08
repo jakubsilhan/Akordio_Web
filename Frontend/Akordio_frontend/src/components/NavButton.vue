@@ -1,9 +1,17 @@
 <template>
-  <router-link v-if="to" :to="to" class="nav-btn">
+  <router-link
+    v-if="to"
+    :to="to"
+    class="py-4 px-8 rounded bg-blue-600 text-white font-bold text-5xl hover:bg-blue-500 active:scale-95"
+  >
     <slot />
   </router-link>
 
-  <button v-else class="nav-btn" @click="$emit('click')">
+  <button
+    v-else
+    class="py-4 px-8 rounded bg-blue-600 text-white font-bold text-5xl hover:bg-blue-500 active:scale-95"
+    @click="$emit('click')"
+  >
     <slot />
   </button>
 </template>
@@ -16,23 +24,3 @@ defineProps({
   },
 })
 </script>
-
-<style scoped>
-.nav-btn {
-  padding: 2rem 10rem;
-  margin: 0.25rem;
-  border: none;
-  border-radius: 8px;
-  background-color: var(--color-primary);
-  color: white;
-  font-weight: bold;
-  font-size: larger;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.nav-btn:hover {
-  background-color: var(--color-secondary);
-}
-</style>

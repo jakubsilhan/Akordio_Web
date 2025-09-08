@@ -56,10 +56,12 @@ def annotate():
     # Convert chord list to .lab file format (start, end, chord_label)
     lab_content = "\n".join([f"{start:.3f} {end:.3f} {label}" for start, end, label in annotations])
 
+    # Return as plain text (no attachment)
+    return lab_content, 200, {"Content-Type": "text/plain"}
     # Return .lab file as download
-    return send_file(
-        io.BytesIO(lab_content.encode("utf-8")),
-        mimetype="text/plain",
-        as_attachment=True,
-        download_name=secure_filename(file.filename.rsplit(".", 1)[0] + ".lab")
-    )
+    # return send_file(
+    #     io.BytesIO(lab_content.encode("utf-8")),
+    #     mimetype="text/plain",
+    #     as_attachment=True,
+    #     download_name=secure_filename(file.filename.rsplit(".", 1)[0] + ".lab")
+    # )

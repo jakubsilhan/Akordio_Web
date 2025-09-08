@@ -1,7 +1,7 @@
 <template>
-  <header class="small-header">
+  <header class="flex items-center justify-between bg-blue-600 text-white px-4 py-8">
     <ReturnButton @click="goBack" />
-    <h1 class="title">{{ title }}</h1>
+    <h1 class="text-3xl font-bold">{{ title }}</h1>
   </header>
 </template>
 
@@ -22,20 +22,3 @@ function goBack() {
   router.back()
 }
 </script>
-
-<style scoped>
-.small-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 2rem;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-  color: white;
-}
-
-.title {
-  font-size: 2.5rem;
-  font-weight: bold;
-}
-</style>

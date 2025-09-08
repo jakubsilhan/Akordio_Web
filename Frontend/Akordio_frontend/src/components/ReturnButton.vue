@@ -1,24 +1,10 @@
 <template>
-  <button class="return-btn" @click="$emit('click')">
+  <button
+    class="bg-white text-blue-600 rounded-xl px-2 py-1 hover:bg-gray-100 active:scale-95"
+    @click="$emit('click')"
+  >
     <i class="fa fa-arrow-left fa-2x"></i>
   </button>
 </template>
 
 <script setup></script>
-
-<style scoped>
-.return-btn {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: none;
-  padding: 1rem 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background 0.2s;
-}
-
-.return-btn:hover {
-  background: rgba(255, 255, 255, 0.35);
-}
-</style>

@@ -1,18 +1,20 @@
 <template>
-  <div class="home-page">
+  <div class="flex flex-col h-screen">
     <!-- Header / Title Section -->
-    <header class="header">
-      <h1 class="title">Akordio</h1>
+    <header class="h-1/3 flex items-center justify-center bg-blue-600 text-white text-center">
+      <h1 class="text-9xl font-bold">Akordio</h1>
     </header>
 
     <!-- Content Section -->
-    <main class="content">
-      <nav class="nav">
+    <main class="flex-1 flex flex-col items-center justify-start p-4 bg-gray-100">
+      <nav class="flex space-x-4 mt-2">
         <NavButton to="/online">Online</NavButton>
         <NavButton to="/fullsong">Fullsong</NavButton>
       </nav>
 
-      <p class="description">Welcome to Akordio - A chord recognition website</p>
+      <p class="text-gray-800 text-xl mt-2 text-center">
+        Welcome to Akordio - A chord recognition website
+      </p>
     </main>
   </div>
 </template>
@@ -20,47 +22,3 @@
 <script setup>
 import NavButton from '@/components/NavButton.vue'
 </script>
-
-<style scoped>
-.home-page {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
-.header {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-  color: white;
-  text-align: center;
-}
-
-.title {
-  font-size: 8rem;
-  font-weight: bold;
-}
-
-.content {
-  flex: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: start;
-  padding: 2rem;
-  background-color: #f9f9f9;
-}
-
-.nav {
-  margin-bottom: 1.5rem;
-}
-
-.description {
-  font-size: 1.2rem;
-  color: #333;
-  max-width: 600px;
-  text-align: center;
-}
-</style>
