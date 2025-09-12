@@ -7,3 +7,4 @@ pydantic
 librosa
 numpy
 flask-cors
+demucs

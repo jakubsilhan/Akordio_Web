@@ -59,3 +59,21 @@ export async function apiText(endpoint = '', body = {}, httpMethod = 'POST', isF
     return { error: error.message }
   }
 }
+
+export async function apiFile(endpoint = '', body = {}, httpMethod = 'POST', isFormData = false) {
+  /**
+   * Method for api calls returning files
+   */
+  try {
+    const response = await apiCall(endpoint, body, httpMethod, isFormData)
+
+    if (response.error) {
+      return response
+    }
+
+    return await response.blob()
+  } catch (error) {
+    console.error(error)
+    return { error: error.message }
+  }
+}

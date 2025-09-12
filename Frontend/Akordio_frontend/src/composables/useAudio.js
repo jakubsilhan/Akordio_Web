@@ -3,7 +3,7 @@ import { ref } from 'vue'
 export function useAudio() {
   const audioFile = ref(null)
   const audioSrc = ref(null)
-  const audioRef = ref(null)
+  const audioplayerRef = ref(null)
   const currentTime = ref(0)
 
   // Parses user input into a usable file and its url
@@ -18,8 +18,8 @@ export function useAudio() {
 
   // Uses audio element reference to get current time
   function onTimeupdate() {
-    currentTime.value = audioRef.value.currentTime
+    currentTime.value = audioplayerRef.value.currentTime
   }
 
-  return { audioFile, audioSrc, audioRef, currentTime, handleAudioUpload, onTimeupdate }
+  return { audioFile, audioSrc, audioplayerRef, currentTime, handleAudioUpload, onTimeupdate }
 }

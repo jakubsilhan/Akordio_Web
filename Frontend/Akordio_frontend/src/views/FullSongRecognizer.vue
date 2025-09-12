@@ -10,9 +10,13 @@
         :onUploadArchive="handleArchiveUpload"
       />
 
+      <p>
+        {{ audioFile?.name || 'No file selected' }}
+      </p>
+
       <!-- Audio Player -->
       <audio
-        ref="audioRef"
+        ref="audioplayerRef"
         :src="audioSrc"
         controls
         @timeupdate="onTimeupdate"
@@ -52,25 +56,29 @@
     >
       <div class="space-y-4">
         <!-- Model choice -->
-        <div>
-          <label class="block mb-1 font-medium">Model Choice:</label>
+        <div title="Select the complexity of desired chords">
+          <div class="flex flex-row space-x-2">
+            <label class="block mb-1 font-medium">Model Choice:</label>
+            <i class="fa fa-question-circle text-gray-300"></i>
+          </div>
           <select v-model="modelChoice" class="border rounded p-2 w-full">
-            <option disabled value="">-- Select a model --</option>
             <option v-for="m in models" :key="m" :value="m">{{ m }}</option>
           </select>
         </div>
 
         <!-- Guitar -->
-        <label class="flex items-center space-x-2">
-          <input type="checkbox" v-model="includeGuitar" />
-          <span>Include Guitar</span>
-        </label>
-
-        <!-- Vocals -->
-        <label class="flex items-center space-x-2">
-          <input type="checkbox" v-model="includeVocals" />
-          <span>Include Vocals</span>
-        </label>
+        <div title="Select wich audio track to filter out">
+          <div class="flex flex-row space-x-2">
+            <label class="block mb-1 font-medium">Separation Choice:</label>
+            <i class="fa fa-question-circle text-gray-300"></i>
+          </div>
+          <select v-model="separationChoice" class="border rounded p-2 w-full">
+            <option v-for="m in separations" :key="m" :value="m">{{ m }}</option>
+          </select>
+        </div>
+        <p class="p-1 text-white bg-orange-400 rounded">
+          <strong>Warning!</strong> Using audio separation will take more time.
+        </p>
       </div>
     </Modal>
   </div>
@@ -78,7 +86,8 @@
 
 <script setup>
 import { ref } from 'vue'
-import { apiText } from '@/utils/api'
+import { apiFile, apiText } from '@/utils/api'
+import { useLoading } from 'vue-loading-overlay'
 
 // Components
 import SmallHeader from '@/components/SmallHeader.vue'
@@ -92,18 +101,24 @@ import { useChords } from '@/composables/useChords'
 import { useDownload } from '@/composables/useDownload'
 import { useUpload } from '@/composables/useUpload'
 
-const { audioFile, audioSrc, audioRef, currentTime, handleAudioUpload, onTimeupdate } = useAudio()
+const { audioFile, audioSrc, audioplayerRef, currentTime, handleAudioUpload, onTimeupdate } =
+  useAudio()
 const labFile = ref('')
 const { chords, currentChord, nextChord, progressPercent } = useChords(labFile, currentTime)
 const { downloadArchive } = useDownload()
 const { uploadArchive } = useUpload()
 
+// Loading screen
+const $loading = useLoading()
+
 // Modal state
 const isModalOpen = ref(false)
-const modelChoice = ref('')
 const includeGuitar = ref(false)
 const includeVocals = ref(false)
-const models = ['majmin', 'sevenths', 'complex'] // example
+const models = ['majmin', 'majmin7', 'complex']
+const separations = ['none', 'guitar', 'vocals', 'both']
+const modelChoice = ref(models[0])
+const separationChoice = ref(separations[0])
 
 // Show modal
 function handleProcess() {
@@ -123,13 +138,16 @@ async function confirmProcess() {
   }
   isModalOpen.value = false
 
+  const loader = $loading.show()
+
+  // Annotation request
   // Build form data
-  const formData = new FormData()
-  formData.append('audio', audioFile.value)
-  formData.append('model_choice', modelChoice.value)
+  const annotData = new FormData()
+  annotData.append('audio', audioFile.value)
+  annotData.append('model_choice', modelChoice.value)
 
   // Request processing
-  const labContent = await apiText('fullsong/annotate', formData, 'POST', true)
+  const labContent = await apiText('fullsong/annotate', annotData, 'POST', true)
 
   // Safety check
   if (!labContent) {
@@ -139,6 +157,31 @@ async function confirmProcess() {
 
   labFile.value = labContent
   console.log('Lab file loaded.')
+
+  // Separation request
+  // Build form dara
+  if (separationChoice.value == 'none') {
+    loader.hide()
+    return
+  }
+  const sepData = new FormData()
+  sepData.append('audio', audioFile.value)
+  sepData.append('separation_choice', separationChoice.value)
+
+  // Request separation
+  const separatedAudio = await apiFile('separation/filter', sepData, 'POST', true)
+
+  if (!separatedAudio) {
+    console.error('No audio received')
+    loader.hide()
+    return
+  }
+  const originalName = audioFile.value.name || 'audio.wav'
+  audioFile.value = new File([separatedAudio], originalName, { type: separatedAudio.type })
+  audioSrc.value = URL.createObjectURL(audioFile.value)
+  console.log('Audio separated')
+
+  loader.hide()
 }
 
 async function handleDownload(event) {

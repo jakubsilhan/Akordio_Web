@@ -1,6 +1,6 @@
 <template>
   <div v-if="show" class="fixed inset-0 flex items-center justify-center bg-black/50">
-    <div class="bg-white p-6 rounded-lg shadow-lg w-96">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-125">
       <header class="flex justify-between items-center mb-4">
         <h2 class="text-lg font-semibold">{{ title }}</h2>
         <button @click="$emit('close')" class="text-gray-500 hover:text-gray-700">&times;</button>
