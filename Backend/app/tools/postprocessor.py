@@ -1,19 +1,28 @@
 import torch, os
 from app.core.net_config import Config
-from app.tools.decoder import Decode
+from app.core.chords import Chords, Complexity
 
 
 class PostProcess:
-    def __init__(self, config):
+    def __init__(self, config: Config):
         self.config = config
-        self.decoder = Decode(config)
 
     def create_annotation(self, preds: list):
         """
         Edits predictions into a usable annotation
         """
-        # Decode preds
-        chords = self.decoder.decode(preds)
+        
+        # Initialization
+        chords_decoder = Chords()
+        match self.config.train.model_complexity:
+            case 'complex':
+                complexity = Complexity.COMPLEX
+            case 'majmin7':
+                complexity = Complexity.MAJMIN7
+            case _:
+                complexity = Complexity.MAJMIN
+        #TODO rework using chords from core and list comprehension
+        chords = [chords_decoder.decode(pred, complexity) for pred in preds]
 
         # Generate annotation
         annotations = self._generate_intervals(chords)

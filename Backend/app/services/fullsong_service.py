@@ -5,8 +5,7 @@ from typing import Dict, Tuple
 from torch.utils.data import DataLoader
 
 from app.core.net_config import Config, load_config 
-from app.core.song_dataset import SongDataset, make_collate_fn
-from app.tools.preprocessor import Preprocess
+from app.core.preprocessor import Preprocessor
 from app.tools.postprocessor import PostProcess
 from app.neural_nets.fullsong.Model import Model
 
@@ -16,13 +15,13 @@ class Fullsong_Service:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         # Loading models
-        self.models: Dict[str, Tuple[Model, Config]] = {
+        self.models: Dict[str, Tuple[Model, Config, Dict]] = {
             "majmin": self._load_model(os.path.join("app", "neural_nets", "fullsong", "majmin")),
             "majmin7": self._load_model(os.path.join("app", "neural_nets", "fullsong", "majmin7")),
             "complex": self._load_model(os.path.join("app", "neural_nets", "fullsong", "complex"))
         }
 
-    def _load_model(self, path) -> Tuple[Model, Config]:
+    def _load_model(self, path) -> Tuple[Model, Config, Dict]:
         """
         Returns a model and its configuration
         """
@@ -33,30 +32,8 @@ class Fullsong_Service:
         model_path = os.path.join(path, "final_model.pt")
         loaded = torch.load(model_path, map_location=self.device)
         model.load_state_dict(loaded['model'])
-
-        return (model, config)
-    
-    def _compute_mean_std(self, tensors: list[torch.Tensor]) -> tuple[float, float]:
-        """
-        Calculate mean and std:
-        """
-        mean = 0.0
-        square_mean = 0.0
-        num_batches = 0
-
-        # Aggregations across the whole song
-        for tensor in tensors:
-            tensor = tensor.unsqueeze(0) # [1, num_frames, num_features]
-            mean += torch.mean(tensor).item()
-            square_mean += torch.mean(tensor.pow(2)).item()
-            num_batches += 1
-
-        # Calculating characteristics
-        mean /= num_batches
-        square_mean /= num_batches
-        std = np.sqrt(square_mean - mean * mean)
-
-        return mean, std
+        normalization = loaded['normalization']
+        return (model, config, normalization)
 
 
     def run_inference(self, audio, model_choice) -> list[tuple[float, float, str]]:
@@ -66,13 +43,11 @@ class Fullsong_Service:
         # Initializations
         if model_choice not in self.models:
             raise ValueError(f"Unknown model: {model_choice}")
-        model, config = self.models[model_choice]
+        model, config, normalization = self.models[model_choice]
 
         # Preprocessing
-        preprocessor = Preprocess(config)
+        preprocessor = Preprocessor(config)
         tensors = preprocessor.process_audio(audio)
-
-        mean, std = self._compute_mean_std(tensors)
 
         predictions = []
         for tensor in tensors:
@@ -80,7 +55,7 @@ class Fullsong_Service:
             x_tensor = tensor.unsqueeze(0).to(self.device) # [1, num_frames, num_features]
 
             # Normalization
-            x_tensor = (x_tensor-mean)/std
+            x_tensor = (x_tensor-normalization['mean'])/normalization['std']
 
             # Predictions
             preds = torch.softmax(model(x_tensor), dim=2).argmax(dim=2)
