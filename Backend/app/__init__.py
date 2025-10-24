@@ -15,8 +15,8 @@ def create_app():
     # Add static html files here
 
     # Allow origins
-    CORS(app)
-    # CORS(app, resources={r"/*": {"origins": "*"}})
+    # CORS(app)
+    CORS(app, resources={r"/*": {"origins": "*"}})
 
     # Initialize services
     fullsong_service = Fullsong_Service()

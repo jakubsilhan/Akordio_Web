@@ -1,6 +1,6 @@
 import torch, os
-from app.core.net_config import Config
-from app.core.chords import Chords, Complexity
+from app.Akordio_Core.net_config import Config
+from app.Akordio_Core.chords import Chords, Complexity
 
 
 class PostProcess:
