@@ -4,9 +4,9 @@ import numpy as np
 from typing import Dict, Tuple
 from torch.utils.data import DataLoader
 
-from app.Akordio_Core.net_config import Config, load_config 
-from app.Akordio_Core.preprocessor import Preprocessor
-from app.Akordio_Core.chords import Chords, Complexity
+from app.Akordio_Core.Classes.NetConfig import Config, load_config 
+from app.Akordio_Core.Tools.Preprocessor import Preprocessor
+from app.Akordio_Core.Tools.Chords import Chords, Complexity
 from app.Akordio_Core.Models.online.Model import Model
 
 class Online_Service:
@@ -78,7 +78,7 @@ class Online_Service:
 
         counts = np.bincount(predictions, minlength=config.train.model.output)
 
-        # Penalization of "N"
+        # Penalization of No chord
         # NO_CHORD_IDX = 0 # index of N
         # counts[NO_CHORD_IDX] = int(counts[NO_CHORD_IDX] * 0.05)  # reduce its vote weight
 

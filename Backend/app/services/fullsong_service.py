@@ -4,8 +4,8 @@ import numpy as np
 from typing import Dict, Tuple
 from torch.utils.data import DataLoader
 
-from app.Akordio_Core.net_config import Config, load_config 
-from app.Akordio_Core.preprocessor import Preprocessor
+from app.Akordio_Core.Classes.NetConfig import Config, load_config 
+from app.Akordio_Core.Tools.Preprocessor import Preprocessor
 from app.tools.postprocessor import PostProcess
 from app.Akordio_Core.Models.fullsong.Model import Model
 

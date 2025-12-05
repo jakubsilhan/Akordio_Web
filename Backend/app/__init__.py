@@ -12,8 +12,6 @@ from app.services.separation_service import Separation_Service
 def create_app():
     app = Flask(__name__)
 
-    # Add static html files here
-
     # Allow origins
     # CORS(app)
     CORS(app, resources={r"/*": {"origins": "*"}})

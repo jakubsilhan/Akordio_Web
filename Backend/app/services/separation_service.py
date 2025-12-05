@@ -27,7 +27,7 @@ class Separation_Service:
         waveform, sr = torchaudio.load(audio)
 
         # Separation
-        sources = apply_model(self.model, waveform.unsqueeze(0), split=True, device="cpu")[0] # unsqueeze and [0] create and remove dummy batch dimension
+        sources = apply_model(self.model, waveform.unsqueeze(0), split=True, device="cpu")[0] # unsqueeze and [0] - create and remove dummy batch dimension for demucs
 
         # Stem preparation
         stems = {name: sources[i] for i, name in enumerate(self.model.sources)}
@@ -42,7 +42,7 @@ class Separation_Service:
 
         # Tensor -> BinaryIO
         audio_buffer = io.BytesIO()
-        torchaudio.save(uri=audio_buffer, src=mix, sample_rate=sr, format="mp3")
+        torchaudio.save(uri=audio_buffer, src=mix, sample_rate=sr, format="mp3") # type: ignore
         audio_buffer.seek(0)
 
         return audio_buffer        
