@@ -10,3 +10,4 @@ flask-cors
 demucs
 pandas
 pyrubberband
+gunicorn
