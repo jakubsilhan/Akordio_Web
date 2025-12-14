@@ -65,20 +65,6 @@
             <option v-for="m in models" :key="m" :value="m">{{ m }}</option>
           </select>
         </div>
-
-        <!-- Guitar -->
-        <div title="Select wich audio track to filter out">
-          <div class="flex flex-row space-x-2">
-            <label class="block mb-1 font-medium">Separation Choice:</label>
-            <i class="fa fa-question-circle text-gray-300"></i>
-          </div>
-          <select v-model="separationChoice" class="border rounded p-2 w-full">
-            <option v-for="m in separations" :key="m" :value="m">{{ m }}</option>
-          </select>
-        </div>
-        <p class="p-1 text-white bg-orange-400 rounded">
-          <strong>Warning!</strong> Using audio separation will take more time.
-        </p>
       </div>
     </Modal>
   </div>
@@ -113,12 +99,8 @@ const $loading = useLoading()
 
 // Modal state
 const isModalOpen = ref(false)
-const includeGuitar = ref(false)
-const includeVocals = ref(false)
 const models = ['majmin', 'majmin7', 'complex']
-const separations = ['none', 'guitar', 'vocals', 'both']
 const modelChoice = ref(models[0])
-const separationChoice = ref(separations[0])
 
 // Show modal
 function handleProcess() {
@@ -157,29 +139,6 @@ async function confirmProcess() {
 
   labFile.value = labContent
   console.log('Lab file loaded.')
-
-  // Separation request
-  // Build form data
-  if (separationChoice.value == 'none') {
-    loader.hide()
-    return
-  }
-  const sepData = new FormData()
-  sepData.append('audio', audioFile.value)
-  sepData.append('separation_choice', separationChoice.value)
-
-  // Request separation
-  const separatedAudio = await apiFile('separation/filter', sepData, 'POST', true)
-
-  if (!separatedAudio) {
-    console.error('No audio received')
-    loader.hide()
-    return
-  }
-  const originalName = audioFile.value.name || 'audio.wav'
-  audioFile.value = new File([separatedAudio], originalName, { type: separatedAudio.type })
-  audioSrc.value = URL.createObjectURL(audioFile.value)
-  console.log('Audio separated')
 
   loader.hide()
 }
