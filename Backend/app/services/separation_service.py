@@ -7,6 +7,8 @@ import torch
 
 from typing import Dict, BinaryIO
 
+from . import MAX_DURATION
+
 class Separation_Service:
     def __init__(self):
         # Loading model
@@ -23,8 +25,12 @@ class Separation_Service:
         """
         Runs the separation
         """
-        # Converting to demucs format (torch.Tensor)
+        # Loading to demucs format (torch.Tensor)
         waveform, sr = torchaudio.load(audio)
+        duration = len(waveform)//sr
+
+        if duration > MAX_DURATION:
+            raise ValueError(f"Audio too long! (max {MAX_DURATION//60} minutes)")
 
         # Separation
         sources = apply_model(self.model, waveform.unsqueeze(0), split=True, device="cpu")[0] # unsqueeze and [0] - create and remove dummy batch dimension for demucs

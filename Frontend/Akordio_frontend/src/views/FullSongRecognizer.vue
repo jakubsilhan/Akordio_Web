@@ -159,7 +159,7 @@ async function confirmProcess() {
   console.log('Lab file loaded.')
 
   // Separation request
-  // Build form dara
+  // Build form data
   if (separationChoice.value == 'none') {
     loader.hide()
     return

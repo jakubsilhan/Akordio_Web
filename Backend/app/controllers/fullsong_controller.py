@@ -41,27 +41,25 @@ def annotate():
         return jsonify({"error": "No file part"}), 400
     file = request.files["audio"]
     if not file.filename or file.filename == "":
-        return jsonify({"error": "No selected file"}), 400
+        return jsonify({"error": "No selected file!"}), 400
 
     # Check for model choice
     model_choice = request.form.get("model_choice")
     if model_choice not in ["majmin", "majmin7", "complex"]:
-        return jsonify({"error": "Invalid model choice"}), 400
+        return jsonify({"error": "Invalid model choice!"}), 400
 
     # Process audio with the selected model
     audio_bytes = file.read()  # Raw bytes, you can feed this to your preprocessing
     fullsong_service = get_fullsong_service()
-    annotations = fullsong_service.run_inference(audio_bytes, model_choice)
+    try:
+      annotations = fullsong_service.run_inference(audio_bytes, model_choice)
+    except ValueError as e:
+        return jsonify({"error": str(e)})
+    except Exception as e:
+        return jsonify({"error": "Annotation failed!"})
 
     # Convert chord list to .lab file format (start, end, chord_label)
     lab_content = "\n".join([f"{start:.3f} {end:.3f} {label}" for start, end, label in annotations])
 
-    # Return as plain text (no attachment)
+    # Return as plain text
     return lab_content, 200, {"Content-Type": "text/plain"}
-    # Return .lab file as download
-    # return send_file(
-    #     io.BytesIO(lab_content.encode("utf-8")),
-    #     mimetype="text/plain",
-    #     as_attachment=True,
-    #     download_name=secure_filename(file.filename.rsplit(".", 1)[0] + ".lab")
-    # )

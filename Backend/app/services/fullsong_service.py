@@ -8,6 +8,7 @@ from app.Akordio_Core.Classes.NetConfig import Config, load_config
 from app.Akordio_Core.Tools.Preprocessor import Preprocessor
 from app.tools.postprocessor import PostProcess
 from app.Akordio_Core.Models.fullsong.Model import Model
+from . import MAX_DURATION
 
 class Fullsong_Service:
     def __init__(self):
@@ -45,9 +46,18 @@ class Fullsong_Service:
             raise ValueError(f"Unknown model: {model_choice}")
         model, config, normalization = self.models[model_choice]
 
+        # Loading audio
+        audio_buffer = io.BytesIO(audio)
+        audio_buffer.seek(0)
+        y, sr = librosa.load(audio_buffer, sr=config.data.preprocess.sampling_rate)
+        duration = librosa.get_duration(y=y, sr=sr)
+
+        if duration > MAX_DURATION:
+            raise ValueError(f"Audio too long! (max {MAX_DURATION//60} minutes)")
+
         # Preprocessing
         preprocessor = Preprocessor(config)
-        tensors = preprocessor.process_audio(audio)
+        tensors = preprocessor.process_audio(y)        
 
         predictions = []
         for tensor in tensors:

@@ -1,0 +1,1 @@
+MAX_DURATION = 8*60

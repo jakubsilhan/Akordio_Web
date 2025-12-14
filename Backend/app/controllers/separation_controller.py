@@ -37,21 +37,26 @@ def filter():
     """
     # Check for file
     if "audio" not in request.files:
-        return jsonify({"error": "No file part"}), 400
+        return jsonify({"error": "No file in request!"}), 400
     file = request.files["audio"]
     if not file.filename or file.filename == "":
-        return jsonify({"error": "No selected file"}), 400
+        return jsonify({"error": "No selected file!"}), 400
 
     # Check for model choice
     model_choice = request.form.get("separation_choice")
     if model_choice not in ["guitar", "vocals", "both"]:
-        return jsonify({"error": "Invalid separation choice"}), 400
+        return jsonify({"error": "Invalid separation choice!"}), 400
 
     # Process audio 
     audio_bytes = file.read()  # Raw bytes
     audio_buffer = io.BytesIO(audio_bytes)
     separation_service = get_separation_service()
-    separated_buffer = separation_service.run_separation(audio_buffer, model_choice)
+    try:
+      separated_buffer = separation_service.run_separation(audio_buffer, model_choice)
+    except ValueError as e:
+        return jsonify({"error": str(e)})
+    except Exception as e:
+        return jsonify({"error": "Separation failed!"})
 
     # Return as file response
     return send_file(
