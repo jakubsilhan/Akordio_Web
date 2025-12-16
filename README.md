@@ -1,6 +1,9 @@
 # Akordio
 Web app for chord recognition tasks.
 
+## Requirements
+Requires a working installation of ffmpeg.
+
 ## Env file
 ```
 FLASK_APP=run

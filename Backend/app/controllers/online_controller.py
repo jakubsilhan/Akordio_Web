@@ -49,9 +49,12 @@ def recognize():
             return jsonify({"error": "Invalid model choice"}), 400
 
         audio_bytes = file.read()
-
         online_service = get_online_service()
-        found_chord = online_service.run_inference(audio_bytes, model_choice)
+        try:
+          found_chord = online_service.run_inference(audio_bytes, model_choice)
+        except Exception as e:
+          print(str(e))
+          return jsonify({"error": "Annotation failed!"}), 400
 
         return jsonify({"chord": found_chord}), 200
     except Exception as e:

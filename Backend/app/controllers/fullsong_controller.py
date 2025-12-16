@@ -54,9 +54,11 @@ def annotate():
     try:
       annotations = fullsong_service.run_inference(audio_bytes, model_choice)
     except ValueError as e:
-        return jsonify({"error": str(e)})
+        print(str(e))
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
-        return jsonify({"error": "Annotation failed!"})
+        print(str(e))
+        return jsonify({"error": "Annotation failed!"}), 400
 
     # Convert chord list to .lab file format (start, end, chord_label)
     lab_content = "\n".join([f"{start:.3f} {end:.3f} {label}" for start, end, label in annotations])

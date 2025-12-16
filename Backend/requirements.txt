@@ -11,3 +11,4 @@ demucs
 pandas
 pyrubberband
 gunicorn
+soundfile

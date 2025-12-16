@@ -2,7 +2,9 @@ from demucs import pretrained
 from demucs.apply import apply_model
 
 import io
-import torchaudio
+import soundfile as sf
+import numpy as np
+import librosa
 import torch
 
 from typing import Dict, BinaryIO
@@ -25,12 +27,22 @@ class Separation_Service:
         """
         Runs the separation
         """
-        # Loading to demucs format (torch.Tensor)
-        waveform, sr = torchaudio.load(audio)
-        duration = len(waveform)//sr
+        # Loading audio
+        y, sr = librosa.load(audio, sr=None, mono=False)
+        # waveform, sr = torchaudio.load(audio)
+        duration = librosa.get_duration(y=y, sr=sr)
 
         if duration > MAX_DURATION:
             raise ValueError(f"Audio too long! (max {MAX_DURATION//60} minutes)")
+        
+        # Convert to demucs format (tensor)
+        waveform = torch.from_numpy(y).float()
+
+        # Convert to correct shape if needed
+        if waveform.ndim == 1:
+            waveform = waveform.unsqueeze(0) 
+        elif waveform.shape[0] != 1 and waveform.shape[0] != 2:
+            waveform = waveform.T
 
         # Separation
         sources = apply_model(self.model, waveform.unsqueeze(0), split=True, device="cpu")[0] # unsqueeze and [0] - create and remove dummy batch dimension for demucs
@@ -48,7 +60,15 @@ class Separation_Service:
 
         # Tensor -> BinaryIO
         audio_buffer = io.BytesIO()
-        torchaudio.save(uri=audio_buffer, src=mix, sample_rate=sr, format="mp3") # type: ignore
+        mix_np = mix.cpu().numpy().T 
+
+        # Write to mp3 file
+        sf.write(
+            file=audio_buffer, 
+            data=mix_np, 
+            samplerate=sr, 
+            format="mp3"
+        )
         audio_buffer.seek(0)
 
         return audio_buffer        

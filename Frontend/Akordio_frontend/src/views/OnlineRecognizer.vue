@@ -41,7 +41,7 @@
 <script setup>
 import { ref } from 'vue'
 import SmallHeader from '@/components/SmallHeader.vue'
-import { apiJson } from '@/utils/api'
+import { apiService } from '@/utils/api'
 
 const recorder = ref(null)
 const stream = ref(null)
@@ -73,7 +73,14 @@ async function startRecording() {
         formData.append('model_choice', modelChoice.value)
 
         uploading.value = true
-        const result = await apiJson('online/recognize', formData, 'POST', true)
+        let result = null
+        try {
+          result = await apiService.post('online/recognize', formData, {
+            responseType: 'json',
+          })
+        } catch (error) {
+          console.error('Failed to recognize chord:', error.message)
+        }
         if (result && result.chord) chord.value = result.chord
         uploading.value = false
 

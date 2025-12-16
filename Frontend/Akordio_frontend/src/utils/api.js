@@ -1,79 +1,39 @@
-async function apiCall(endpoint = '', body = {}, httpMethod = 'POST', isFormData = false) {
-  /**
-   * Basic method for api calls
-   */
-  try {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL
-    const url = `${baseUrl}/${endpoint}`
+import axios from 'axios'
 
-    let options = { method: httpMethod }
+class ApiService {
+  constructor() {
+    // Create a client with specified details
+    this.client = axios.create({
+      baseURL: import.meta.env.VITE_API_BASE_URL,
+      withCredentials: false,
+    })
 
-    if (isFormData) {
-      options.body = body
-    } else {
-      options.headers = { 'Content-Type': 'application/json' }
-      options.body = JSON.stringify(body)
-    }
+    // Logs error and propagates it
+    this.client.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        console.error('API Error', error.response?.data || error.message)
+        return Promise.reject(error)
+      },
+    )
+  }
 
-    const response = await fetch(url, options)
-    if (!response.ok) throw new Error((await response.text()) || `HTTP ${response.status}`)
-    return response
-  } catch (error) {
-    console.error(error)
-    return { error: error.message }
+  get(url, params = {}, config = {}) {
+    return this.client.get(url, { params, ...config }).then((res) => res.data)
+  }
+
+  post(url, data, config = {}) {
+    return this.client.post(url, data, config).then((res) => res.data)
+  }
+
+  put(url, data) {
+    return this.client.put(url, data).then((res) => res.data)
+  }
+
+  delete(url) {
+    return this.client.delete(url).then((res) => res.data)
   }
 }
 
-export async function apiJson(endpoint = '', body = {}, httpMethod = 'POST', isFormData = false) {
-  /**
-   * Method for api calls returning json
-   */
-  try {
-    const response = await apiCall(endpoint, body, httpMethod, isFormData)
-
-    if (response.error) {
-      return response
-    }
-
-    return await response.json()
-  } catch (error) {
-    console.error(error)
-    return { error: error.message }
-  }
-}
-
-export async function apiText(endpoint = '', body = {}, httpMethod = 'POST', isFormData = false) {
-  /**
-   * Method for api calls returning txt
-   */
-  try {
-    const response = await apiCall(endpoint, body, httpMethod, isFormData)
-
-    if (response.error) {
-      return response
-    }
-
-    return await response.text()
-  } catch (error) {
-    console.error(error)
-    return { error: error.message }
-  }
-}
-
-export async function apiFile(endpoint = '', body = {}, httpMethod = 'POST', isFormData = false) {
-  /**
-   * Method for api calls returning files
-   */
-  try {
-    const response = await apiCall(endpoint, body, httpMethod, isFormData)
-
-    if (response.error) {
-      return response
-    }
-
-    return await response.blob()
-  } catch (error) {
-    console.error(error)
-    return { error: error.message }
-  }
-}
+// Creates a global api service
+export const apiService = new ApiService()

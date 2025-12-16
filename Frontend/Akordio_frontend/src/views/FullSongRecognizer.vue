@@ -86,7 +86,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { apiFile, apiText } from '@/utils/api'
+import { apiService } from '@/utils/api'
 import { useLoading } from 'vue-loading-overlay'
 
 // Components
@@ -147,11 +147,14 @@ async function confirmProcess() {
   annotData.append('model_choice', modelChoice.value)
 
   // Request processing
-  const labContent = await apiText('fullsong/annotate', annotData, 'POST', true)
-
-  // Safety check
-  if (!labContent) {
-    console.error('No lab content received')
+  let labContent = null
+  try {
+    labContent = await apiService.post('fullsong/annotate', annotData, {
+      responseType: 'text',
+    })
+  } catch (error) {
+    console.error('No lab content received:', error.message)
+    alert('Failed to annotate song!')
     return
   }
 
@@ -169,13 +172,18 @@ async function confirmProcess() {
   sepData.append('separation_choice', separationChoice.value)
 
   // Request separation
-  const separatedAudio = await apiFile('separation/filter', sepData, 'POST', true)
-
-  if (!separatedAudio) {
-    console.error('No audio received')
+  let separatedAudio = null
+  try {
+    separatedAudio = await apiService.post('separation/filter', sepData, {
+      responseType: 'blob',
+    })
+  } catch (error) {
+    console.error('No audio received:', error.message)
+    alert('Failed to separate instruments!')
     loader.hide()
     return
   }
+
   const originalName = audioFile.value.name || 'audio.wav'
   audioFile.value = new File([separatedAudio], originalName, { type: separatedAudio.type })
   audioSrc.value = URL.createObjectURL(audioFile.value)

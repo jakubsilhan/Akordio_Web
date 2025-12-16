@@ -58,9 +58,14 @@ class Online_Service:
             case _:
                 complexity = Complexity.MAJMIN
 
+        # Loading audio
+        audio_buffer = io.BytesIO(audio)
+        audio_buffer.seek(0)
+        y, sr = librosa.load(audio_buffer, sr=config.data.preprocess.sampling_rate)
+
         # Preprocessing
         preprocessor = Preprocessor(config)
-        tensors = preprocessor.process_audio(audio)
+        tensors = preprocessor.process_audio(y)
 
         predictions = []
         for tensor in tensors:

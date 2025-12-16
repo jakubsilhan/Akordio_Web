@@ -54,9 +54,11 @@ def filter():
     try:
       separated_buffer = separation_service.run_separation(audio_buffer, model_choice)
     except ValueError as e:
-        return jsonify({"error": str(e)})
+        print(str(e))
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
-        return jsonify({"error": "Separation failed!"})
+        print(str(e))
+        return jsonify({"error": "Separation failed!"}), 400
 
     # Return as file response
     return send_file(
