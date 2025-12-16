@@ -22,8 +22,6 @@ services:
     container_name: backend
     ports:
       - "5000:5000"
-    environment:
-      - FLASK_APP=run
-      - FLASK_ENV=development
+    # Only for dev (live changes)
     volumes:
-      - ./Backend:/akordio
+      - ./Backend:/backend
