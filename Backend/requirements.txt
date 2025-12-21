@@ -12,3 +12,5 @@ pandas
 pyrubberband
 gunicorn
 soundfile
+celery
+redis

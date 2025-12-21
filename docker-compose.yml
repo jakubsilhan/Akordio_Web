@@ -1,7 +1,5 @@
 name: Akordio
 
-version: "3.9"
-
 services:
   frontend:
     build:
@@ -25,3 +23,37 @@ services:
     # Only for dev (live changes)
     volumes:
       - ./Backend:/backend
+      - audio_temp:/tmp/akordio_audio
+    environment:
+      - CELERY_WORKER=false
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1 
+    depends_on:
+      - redis
+  celery:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name:  celery_worker
+    command: celery -A run.celery_app worker -l INFO --pool=solo
+    volumes:
+      - ./Backend:/backend
+      - audio_temp:/tmp/akordio_audio
+    environment:
+      - CELERY_WORKER=true
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    depends_on:
+      - backend
+      - redis
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
+  audio_temp:

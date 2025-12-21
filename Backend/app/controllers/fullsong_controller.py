@@ -1,14 +1,20 @@
-import io
+import tempfile, os
 from werkzeug.utils import secure_filename
-from flask import Blueprint, jsonify, request, send_file, current_app
-from app.extensions import get_fullsong_service
+from flask import Blueprint, jsonify, request
+
+
+from app.tools.tasks import run_fullsong_task
+from celery.result import AsyncResult
 
 bp = Blueprint("fullsong", __name__, url_prefix="/fullsong")
+
+SHARED_TEMP_DIR = "/tmp/akordio_audio"
+os.makedirs(SHARED_TEMP_DIR, exist_ok=True)
 
 @bp.route("/annotate", methods=["POST"])
 def annotate():
     """
-    Creates a chord annotation for uploaded audio 
+    Creates a task for chord annotation for uploaded audio 
     ---
     tags:
       - Audio
@@ -48,20 +54,46 @@ def annotate():
     if model_choice not in ["majmin", "majmin7", "complex"]:
         return jsonify({"error": "Invalid model choice!"}), 400
 
-    # Process audio with the selected model
-    audio_bytes = file.read()  # Raw bytes, you can feed this to your preprocessing
-    fullsong_service = get_fullsong_service()
+    # Create temporary file
+    fd, temp_path = tempfile.mkstemp(dir=SHARED_TEMP_DIR, suffix=f"_{secure_filename(file.filename)}"
+    )
     try:
-      annotations = fullsong_service.run_inference(audio_bytes, model_choice)
-    except ValueError as e:
-        print(str(e))
-        return jsonify({"error": str(e)}), 400
+        # Write audio to temp file
+        with os.fdopen(fd, 'wb') as tmp:
+            tmp.write(file.read())
+            
+        # Create a celery task
+        task = run_fullsong_task.delay(temp_path, model_choice) # type: ignore
+
+        # Return task id
+        return jsonify({
+            "task_id": task.id,
+            "status": "Processing"
+        }), 202
     except Exception as e:
-        print(str(e))
-        return jsonify({"error": "Annotation failed!"}), 400
+        return jsonify({"error": f"Failed to cache file: {str(e)}"}), 500
+    
 
-    # Convert chord list to .lab file format (start, end, chord_label)
-    lab_content = "\n".join([f"{start:.3f} {end:.3f} {label}" for start, end, label in annotations])
+@bp.route("/annotate/<task_id>", methods=["GET"])
+def get_result(task_id):
+    """Queries for annotated lab file"""
+    # Retrieve task result
+    result = AsyncResult(task_id)
 
-    # Return as plain text
-    return lab_content, 200, {"Content-Type": "text/plain"}
+    # Check state
+    if result.state == 'PENDING':
+        return jsonify({"status": "PROCESSING"}), 200
+    
+    elif result.state == 'FAILURE':
+        return jsonify({"error": str(result.info)}), 500
+    
+    elif result.state == 'SUCCESS':
+      # Build and send annotation
+      annotations = result.result
+      lab_content = "\n".join([f"{start:.3f} {end:.3f} {label}" for start, end, label in annotations])
+      
+      return jsonify({
+          "status": "COMPLETED",
+          "result": lab_content
+      }), 200
+    return jsonify({"status": result.state}), 200

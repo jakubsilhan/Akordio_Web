@@ -85,9 +85,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { apiService } from '@/utils/api'
 import { useLoading } from 'vue-loading-overlay'
+import { useToast } from 'vue-toastification'
 
 // Components
 import SmallHeader from '@/components/SmallHeader.vue'
@@ -111,33 +112,38 @@ const { uploadArchive } = useUpload()
 // Loading screen
 const $loading = useLoading()
 
+// Toast
+const toast = useToast()
+
+// Processing state
+const currentProcessId = ref(0)
+
 // Modal state
 const isModalOpen = ref(false)
-const includeGuitar = ref(false)
-const includeVocals = ref(false)
 const models = ['majmin', 'majmin7', 'complex']
 const separations = ['none', 'guitar', 'vocals', 'both']
 const modelChoice = ref(models[0])
 const separationChoice = ref(separations[0])
 
-// Show modal
-function handleProcess() {
-  if (!audioFile.value) {
-    console.error('No audio file selected!')
-    alert('Select audio')
-    return
-  }
-  isModalOpen.value = true
-}
+onUnmounted(() => {
+  currentProcessId.value++ // Kill any current processing
+})
 
-// Request processing from backend
+// Backend communication
 async function confirmProcess() {
+  /**
+   * All of processing
+   */
   if (!audioFile.value) {
     console.error('No audio file selected!')
     return
   }
-  isModalOpen.value = false
 
+  // Processing state
+  const myProcessId = ++currentProcessId.value
+
+  // Display
+  isModalOpen.value = false
   const loader = $loading.show()
 
   // Annotation request
@@ -147,19 +153,27 @@ async function confirmProcess() {
   annotData.append('model_choice', modelChoice.value)
 
   // Request processing
-  let labContent = null
+  let annotationId = null
   try {
-    labContent = await apiService.post('fullsong/annotate', annotData, {
-      responseType: 'text',
+    const annotationTask = await apiService.post('fullsong/annotate', annotData, {
+      responseType: 'json',
     })
+    annotationId = annotationTask.task_id
   } catch (error) {
-    console.error('No lab content received:', error.message)
-    alert('Failed to annotate song!')
+    console.error('Annotation start failed:', error.message)
+    toast.error('Failed to start annotation!')
     return
   }
+  console.log('Annotation task sent!')
 
-  labFile.value = labContent
-  console.log('Lab file loaded.')
+  // Querying
+  const annotToastId = toast.info('Annotation in progress!', {
+    timeout: false,
+    closeOnClick: false,
+    closeButton: false,
+    draggable: false,
+  })
+  await queryAnnotation(annotationId, annotToastId, myProcessId)
 
   // Separation request
   // Build form data
@@ -172,27 +186,154 @@ async function confirmProcess() {
   sepData.append('separation_choice', separationChoice.value)
 
   // Request separation
-  let separatedAudio = null
+  let separationId = null
   try {
-    separatedAudio = await apiService.post('separation/filter', sepData, {
-      responseType: 'blob',
+    const separationTask = await apiService.post('separation/filter', sepData, {
+      responseType: 'json',
     })
+    separationId = separationTask.task_id
   } catch (error) {
-    console.error('No audio received:', error.message)
-    alert('Failed to separate instruments!')
-    loader.hide()
+    console.error('Separation start failed:', error.message)
+    toast.error('Failed to start separation!')
     return
   }
-
-  const originalName = audioFile.value.name || 'audio.wav'
-  audioFile.value = new File([separatedAudio], originalName, { type: separatedAudio.type })
-  audioSrc.value = URL.createObjectURL(audioFile.value)
-  console.log('Audio separated')
-
+  console.log('Task sent!')
   loader.hide()
+
+  // Querying
+  const sepToastId = toast.info('Separation in progress!', {
+    timeout: false,
+    closeOnClick: false,
+    closeButton: false,
+    draggable: false,
+  })
+  querySeparation(separationId, sepToastId, myProcessId)
+}
+
+async function queryAnnotation(annotationId, toastId, processId) {
+  let labContent = null
+  while (true) {
+    if (processId !== currentProcessId.value) {
+      toast.dismiss(toastId)
+      return
+    }
+    try {
+      // Querry
+      const data = await apiService.get(`fullsong/annotate/${annotationId}`)
+
+      // Check status
+      if (data.status === 'COMPLETED') {
+        labContent = data.result
+        console.log('Task completed!')
+        labFile.value = labContent
+        console.log('Lab file loaded.')
+        toast.update(toastId, {
+          content: 'Annotation finished',
+          options: {
+            type: 'success',
+            timeout: 5000,
+            closeOnClick: true,
+          },
+        })
+        break
+      }
+
+      if (data.status === 'PROCESSING') {
+        await new Promise((resolve) => setTimeout(resolve, 2000)) // non blocking wait
+        console.log('Task processing!')
+        continue
+      }
+    } catch (err) {
+      console.error('Polling failed:', err)
+      toast.update(toastId, {
+        content: 'Checking for annotation result failed!',
+        options: {
+          type: 'error',
+          timeout: 5000,
+          closeOnClick: true,
+        },
+      })
+      break
+    }
+  }
+}
+
+// Query for separation result
+async function querySeparation(separationId, toastId, processId) {
+  while (true) {
+    if (processId !== currentProcessId.value) {
+      toast.dismiss(toastId)
+      return
+    }
+    try {
+      const response = await apiService.get(
+        `separation/filter/${separationId}`,
+        {},
+        { responseType: 'blob' },
+      )
+
+      // Check if JSON for status
+      if (response.type === 'application/json') {
+        const text = await response.text()
+        const statusData = JSON.parse(text)
+
+        if (statusData.status === 'PROCESSING') {
+          console.log('Task processing!')
+          // 2 second query pause
+          await new Promise((resolve) => setTimeout(resolve, 2000))
+          continue
+        }
+      }
+
+      // Parse audio blob
+      const originalName = audioFile.value?.name || 'audio.mp3'
+      audioFile.value = new File([response], originalName, { type: 'audio/mpeg' })
+      audioSrc.value = URL.createObjectURL(audioFile.value)
+
+      console.log('Task completed!')
+      toast.update(toastId, {
+        content: 'Separation finished',
+        options: {
+          type: 'success',
+          timeout: 5000,
+          closeOnClick: true,
+        },
+      })
+      // toast.dismiss(toastId)
+      // toast.success('Separation finished!')
+      break
+    } catch (err) {
+      console.error('Polling failed:', err)
+      toast.update(toastId, {
+        content: 'Checking for separation result failed!',
+        options: {
+          type: 'error',
+          timeout: 5000,
+          closeOnClick: true,
+        },
+      })
+      break
+    }
+  }
+}
+
+// Handlers
+function handleProcess() {
+  /**
+   * Display modal for processing selection
+   */
+  if (!audioFile.value) {
+    console.error('No audio file selected!')
+    alert('Select audio')
+    return
+  }
+  isModalOpen.value = true
 }
 
 async function handleDownload(event) {
+  /**
+   * Download processed files
+   */
   try {
     downloadArchive(audioFile.value, labFile.value)
   } catch (err) {
@@ -202,6 +343,9 @@ async function handleDownload(event) {
 }
 
 async function handleArchiveUpload(event) {
+  /**
+   * Upload previously processed files
+   */
   try {
     const archive = event.target.files[0]
     const files = await uploadArchive(archive)

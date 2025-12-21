@@ -2,13 +2,15 @@ import io, torch, librosa, os
 import numpy as np
 
 from typing import Dict, Tuple
-from torch.utils.data import DataLoader
 
 from app.Akordio_Core.Classes.NetConfig import Config, load_config 
 from app.Akordio_Core.Tools.Preprocessor import Preprocessor
 from app.tools.postprocessor import PostProcess
 from app.Akordio_Core.Models.fullsong.Model import Model
 from . import MAX_DURATION
+
+
+
 
 class Fullsong_Service:
     def __init__(self):
@@ -21,6 +23,7 @@ class Fullsong_Service:
             "majmin7": self._load_model(os.path.join("app", "Akordio_Core", "Models", "fullsong", "majmin7")),
             "complex": self._load_model(os.path.join("app", "Akordio_Core", "Models", "fullsong", "complex"))
         }
+        print("Models loaded")
 
     def _load_model(self, path) -> Tuple[Model, Config, Dict]:
         """
@@ -35,7 +38,6 @@ class Fullsong_Service:
         model.load_state_dict(loaded['model'])
         normalization = loaded['normalization']
         return (model, config, normalization)
-
 
     def run_inference(self, audio, model_choice) -> list[tuple[float, float, str]]:
         """
