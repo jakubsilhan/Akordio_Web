@@ -1,4 +1,4 @@
-import io, torch, librosa, os
+import io, torch, librosa, os, scipy.signal
 import numpy as np
 
 from typing import Dict, Tuple
@@ -76,6 +76,7 @@ class Fullsong_Service:
             predictions.extend(preds)
 
         # Postprocessing
+        predictions = scipy.signal.medfilt(predictions, kernel_size=7)
         postprocessor = PostProcess(config)
         annotations = postprocessor.create_annotation(predictions)
 
