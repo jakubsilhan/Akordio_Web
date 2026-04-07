@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 # TODO try using context to access the services as singleton
 
-@shared_task(ignore_result=False)
+@shared_task(ignore_result=False, queue="annotation")
 def run_fullsong_task(file_path, model_choice):
     """Celery task for fullsong inference"""
     try:
@@ -33,7 +33,7 @@ def run_fullsong_task(file_path, model_choice):
             os.remove(file_path)
 
 
-@shared_task(ignore_result=False)
+@shared_task(ignore_result=False, queue="separation")
 def run_separation_task(file_path, model_choice):
     """Celery task for instrument separation"""
     try:

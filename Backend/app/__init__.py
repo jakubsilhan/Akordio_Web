@@ -47,6 +47,11 @@ def create_app():
             result_backend=f"{CELERY_BACKEND_DB}",
             task_ignore_result=False,
             result_expires=480,
+            task_queues={
+                "annotation": {},
+                "separation": {},
+            },
+            task_default_queue="annotation",
         ),
     )
     app.config.from_prefixed_env()

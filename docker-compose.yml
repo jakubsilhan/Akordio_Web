@@ -20,9 +20,7 @@ services:
     container_name: backend
     ports:
       - "5000:5000"
-    # Only for dev (live changes)
     volumes:
-      - ./Backend:/backend
       - audio_temp:/tmp/akordio_audio
     environment:
       - CELERY_WORKER=false
@@ -30,14 +28,28 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379/1 
     depends_on:
       - redis
-  celery:
+  celery-annotation:
     build:
       context: ./Backend
       dockerfile: Dockerfile
-    container_name:  celery_worker
-    command: celery -A run.celery_app worker -l INFO --pool=solo
+    container_name: celery_annotation_worker
+    command: celery -A run.celery_app worker -l INFO --pool=solo --queues=annotation
     volumes:
-      - ./Backend:/backend
+      - audio_temp:/tmp/akordio_audio
+    environment:
+      - CELERY_WORKER=true
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    depends_on:
+      - backend
+      - redis
+  celery-separation:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: celery_separation_worker
+    command: celery -A run.celery_app worker -l INFO --pool=solo --queues=separation
+    volumes:
       - audio_temp:/tmp/akordio_audio
     environment:
       - CELERY_WORKER=true
