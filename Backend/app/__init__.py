@@ -46,6 +46,7 @@ def create_app():
             broker_url=f"{CELERY_BROKER_DB}",
             result_backend=f"{CELERY_BACKEND_DB}",
             task_ignore_result=False,
+            result_extended=True,
             result_expires=480,
             task_queues={
                 "annotation": {},

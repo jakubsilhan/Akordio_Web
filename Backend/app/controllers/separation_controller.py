@@ -1,4 +1,4 @@
-import io, tempfile, os
+import io, os, uuid
 from werkzeug.utils import secure_filename
 from flask import Blueprint, jsonify, request, send_file
 
@@ -7,7 +7,12 @@ from celery.result import AsyncResult
 
 bp = Blueprint("separation", __name__, url_prefix="/separation")
 
-SHARED_TEMP_DIR = "/tmp/akordio_audio"
+INPUT_DIR = "/tmp/akordio_audio/separation/input"
+OUTPUT_DIR = "/tmp/akordio_audio/separation/output"
+
+os.makedirs(INPUT_DIR, exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
 @bp.route("/filter", methods=["POST"])
 def filter():
     """
@@ -51,16 +56,20 @@ def filter():
     if model_choice not in ["guitar", "vocals", "both"]:
         return jsonify({"error": "Invalid separation choice!"}), 400
 
-    # Create temporary file
-    fd, temp_path = tempfile.mkstemp(dir=SHARED_TEMP_DIR, suffix=f"_{secure_filename(file.filename)}"
-    )
+    # Create temporary paths
+    unique_id = str(uuid.uuid4())
+    unique_filename = f"{unique_id}_{secure_filename(file.filename)}"
+    input_path = os.path.join(INPUT_DIR, unique_filename)
+    
+    # Generate output path
+    output_path = os.path.join(OUTPUT_DIR, unique_filename)
     try:
         # Write audio to temp file
-        with os.fdopen(fd, 'wb') as tmp:
+        with open(input_path, 'wb') as tmp:
             tmp.write(file.read())
             
         # Create a celery task
-        task = run_separation_task.delay(temp_path, model_choice) # type: ignore
+        task = run_separation_task.delay(input_path, output_path, model_choice) # type: ignore
 
         # Return task id
         return jsonify({
@@ -68,6 +77,8 @@ def filter():
             "status": "Processing"
         }), 202
     except Exception as e:
+        if os.path.exists(input_path):
+            os.remove(input_path)
         return jsonify({"error": f"Failed to cache file: {str(e)}"}), 500
 
 @bp.route("/filter/<task_id>", methods=["GET"])
@@ -86,13 +97,17 @@ def get_result(task_id):
     elif result.state == 'SUCCESS':
       # Load audio buffer
       separated_path = result.result
+
+      # Check for separated file
+      if not os.path.exists(separated_path):
+            return jsonify({"error": "Output file not found"}), 404
+      
       with open(separated_path, 'rb') as f:
         separated_buffer = io.BytesIO(f.read())
       separated_buffer.seek(0)
 
       # Remove audio file
-      if os.path.exists(separated_path):
-            os.remove(separated_path)
+      os.remove(separated_path)
 
       # Build filename 
       original_name = os.path.basename(separated_path)

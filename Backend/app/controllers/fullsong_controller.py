@@ -1,4 +1,4 @@
-import tempfile, os
+import os, uuid
 from werkzeug.utils import secure_filename
 from flask import Blueprint, jsonify, request
 
@@ -8,7 +8,7 @@ from celery.result import AsyncResult
 
 bp = Blueprint("fullsong", __name__, url_prefix="/fullsong")
 
-SHARED_TEMP_DIR = "/tmp/akordio_audio"
+SHARED_TEMP_DIR = "/tmp/akordio_audio/annotation"
 os.makedirs(SHARED_TEMP_DIR, exist_ok=True)
 
 @bp.route("/annotate", methods=["POST"])
@@ -55,11 +55,11 @@ def annotate():
         return jsonify({"error": "Invalid model choice!"}), 400
 
     # Create temporary file
-    fd, temp_path = tempfile.mkstemp(dir=SHARED_TEMP_DIR, suffix=f"_{secure_filename(file.filename)}"
-    )
+    unique_filename = f"{uuid.uuid4()}_{secure_filename(file.filename)}"
+    temp_path = os.path.join(SHARED_TEMP_DIR, unique_filename)
     try:
         # Write audio to temp file
-        with os.fdopen(fd, 'wb') as tmp:
+        with open(temp_path, 'wb') as tmp:
             tmp.write(file.read())
             
         # Create a celery task
