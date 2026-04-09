@@ -25,7 +25,8 @@ services:
     environment:
       - CELERY_WORKER=false
       - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/1 
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - CELERY_METADATA_URL=redis://redis:6379/2
     depends_on:
       - redis
   celery-annotation:
@@ -33,13 +34,14 @@ services:
       context: ./Backend
       dockerfile: Dockerfile
     container_name: celery_annotation_worker
-    command: celery -A run.celery_app worker -l INFO --pool=solo --queues=annotation
+    command: celery -A run.celery_app worker -l INFO --max-tasks-per-child=10 --pool=prefork --concurrency=1 --queues=annotation
     volumes:
       - audio_temp:/tmp/akordio_audio
     environment:
       - CELERY_WORKER=true
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - CELERY_METADATA_URL=redis://redis:6379/2
     depends_on:
       - backend
       - redis
@@ -48,13 +50,14 @@ services:
       context: ./Backend
       dockerfile: Dockerfile
     container_name: celery_separation_worker
-    command: celery -A run.celery_app worker -l INFO --pool=solo --queues=separation
+    command: celery -A run.celery_app worker -l INFO --max-tasks-per-child=10 --pool=prefork --concurrency=1 --queues=separation
     volumes:
       - audio_temp:/tmp/akordio_audio
     environment:
       - CELERY_WORKER=true
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - CELERY_METADATA_URL=redis://redis:6379/2
     depends_on:
       - backend
       - redis

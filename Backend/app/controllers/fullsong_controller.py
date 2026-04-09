@@ -4,6 +4,7 @@ from flask import Blueprint, jsonify, request
 
 
 from app.tools.tasks import run_fullsong_task
+from app.tools.redis_client import save_task
 from celery.result import AsyncResult
 
 bp = Blueprint("fullsong", __name__, url_prefix="/fullsong")
@@ -64,6 +65,10 @@ def annotate():
             
         # Create a celery task
         task = run_fullsong_task.delay(temp_path, model_choice) # type: ignore
+        save_task(task.id, {
+            "type": "annotation",
+            "file_path": temp_path
+        })
 
         # Return task id
         return jsonify({

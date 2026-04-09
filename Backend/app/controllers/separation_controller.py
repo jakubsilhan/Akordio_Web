@@ -3,6 +3,7 @@ from werkzeug.utils import secure_filename
 from flask import Blueprint, jsonify, request, send_file
 
 from app.tools.tasks import run_separation_task
+from app.tools.redis_client import save_task
 from celery.result import AsyncResult
 
 bp = Blueprint("separation", __name__, url_prefix="/separation")
@@ -70,6 +71,11 @@ def filter():
             
         # Create a celery task
         task = run_separation_task.delay(input_path, output_path, model_choice) # type: ignore
+        save_task(task.id, {
+            "type": "separation",
+            "input_path": input_path,
+            "output_path": output_path
+        })
 
         # Return task id
         return jsonify({

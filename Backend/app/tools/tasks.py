@@ -2,8 +2,12 @@ import os, io, shutil
 import logging
 from app.extensions import get_fullsong_service, get_separation_service
 from celery import shared_task
+from celery.result import AsyncResult
+from app.tools.redis_client import get_task, delete_task
+from celery import current_task
 
 logger = logging.getLogger(__name__)
+CANCEL_TTL = 3600
 
 @shared_task(ignore_result=False, queue="annotation")
 def run_fullsong_task(file_path, model_choice):
@@ -23,7 +27,7 @@ def run_fullsong_task(file_path, model_choice):
         raise e
     finally:
         # Cleanup
-        logger.log(0, "Annotation finished")
+        logger.info("Annotation finished")
         if os.path.exists(file_path):
             os.remove(file_path)
 
@@ -55,6 +59,48 @@ def run_separation_task(input_path, output_path, model_choice):
             os.remove(output_path)
         raise e
     finally:
-        logger.log(0, "Separation finished")
+        logger.info("Separation finished")
+        delete_task(current_task.request.id) # type: ignore
         if os.path.exists(input_path):
             os.remove(input_path)
+
+
+def cancel_task(task_id: str):
+    task = AsyncResult(task_id)
+
+    # Revoke task
+    task.revoke(terminate=True, signal="SIGKILL")
+
+    # Fetch metadata
+    data = get_task(task_id)
+
+    if not data:
+        logger.error(f"No metadata found for task {task_id}")
+        return {"status": "cancelled", "warning": "no metadata"}
+
+    try:
+        if data["type"] == "annotation":
+            file_path = data["file_path"]
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                logger.info(f"Deleted file: {file_path}")
+
+        elif data["type"] == "separation":
+            input_path = data["input_path"]
+            output_path = data["output_path"]
+
+            if os.path.exists(input_path):
+                os.remove(input_path)
+                logger.info(f"Deleted input: {input_path}")
+
+            if os.path.exists(output_path):
+                os.remove(output_path)
+                logger.info(f"Deleted output: {output_path}")
+
+    except Exception as e:
+        logger.error(f"Cleanup failed for {task_id}: {e}")
+
+    finally:
+        delete_task(task_id)
+
+    return {"status": "cancelled"}

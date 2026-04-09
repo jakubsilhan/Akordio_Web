@@ -109,14 +109,13 @@ const { chords, currentChord, nextChord, progressPercent } = useChords(labFile, 
 const { downloadArchive } = useDownload()
 const { uploadArchive } = useUpload()
 
-// Loading screen
+// Processing visuals
 const $loading = useLoading()
-
-// Toast
 const toast = useToast()
 
 // Processing state
 const currentProcessId = ref(0)
+const taskId = ref(null)
 
 // Modal state
 const isModalOpen = ref(false)
@@ -127,6 +126,7 @@ const separationChoice = ref(separations[0])
 
 onUnmounted(() => {
   currentProcessId.value++ // Kill any current processing
+  cancelTaskById(taskId.value)
 })
 
 // Backend communication
@@ -141,6 +141,7 @@ async function confirmProcess() {
 
   // Processing state
   const myProcessId = ++currentProcessId.value
+  cancelTaskById(taskId.value)
 
   // Display
   isModalOpen.value = false
@@ -153,12 +154,11 @@ async function confirmProcess() {
   annotData.append('model_choice', modelChoice.value)
 
   // Request processing
-  let annotationId = null
   try {
     const annotationTask = await apiService.post('fullsong/annotate', annotData, {
       responseType: 'json',
     })
-    annotationId = annotationTask.task_id
+    taskId.value = annotationTask.task_id
   } catch (error) {
     console.error('Annotation start failed:', error.message)
     toast.error('Failed to start annotation!')
@@ -173,7 +173,7 @@ async function confirmProcess() {
     closeButton: false,
     draggable: false,
   })
-  await queryAnnotation(annotationId, annotToastId, myProcessId)
+  await queryAnnotation(taskId.value, annotToastId, myProcessId)
 
   // Separation request
   // Build form data
@@ -186,12 +186,11 @@ async function confirmProcess() {
   sepData.append('separation_choice', separationChoice.value)
 
   // Request separation
-  let separationId = null
   try {
     const separationTask = await apiService.post('separation/filter', sepData, {
       responseType: 'json',
     })
-    separationId = separationTask.task_id
+    taskId.value = separationTask.task_id
   } catch (error) {
     console.error('Separation start failed:', error.message)
     toast.error('Failed to start separation!')
@@ -207,7 +206,7 @@ async function confirmProcess() {
     closeButton: false,
     draggable: false,
   })
-  querySeparation(separationId, sepToastId, myProcessId)
+  querySeparation(taskId.value, sepToastId, myProcessId)
 }
 
 async function queryAnnotation(annotationId, toastId, processId) {
@@ -299,8 +298,6 @@ async function querySeparation(separationId, toastId, processId) {
           closeOnClick: true,
         },
       })
-      // toast.dismiss(toastId)
-      // toast.success('Separation finished!')
       break
     } catch (err) {
       console.error('Polling failed:', err)
@@ -355,6 +352,19 @@ async function handleArchiveUpload(event) {
     audioSrc.value = URL.createObjectURL(audioFile.value)
   } catch (err) {
     console.log(err.message)
+  }
+}
+
+async function cancelTaskById(taskId) {
+  if (!taskId) return
+
+  try {
+    const response = await apiService.post(`/tasks/${taskId}/cancel`)
+    console.log('Task cancelled')
+    toast.info(`Task cancelled`)
+  } catch (err) {
+    console.error('Failed to cancel task:', err)
+    toast.error(`Failed to cancel task`)
   }
 }
 </script>
