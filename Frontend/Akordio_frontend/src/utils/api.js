@@ -4,7 +4,7 @@ class ApiService {
   constructor() {
     // Create a client with specified details
     this.client = axios.create({
-      baseURL: import.meta.env.VITE_API_BASE_URL,
+      baseURL: import.meta.env.VITE_API_BASE_URL + '/',
       withCredentials: false,
     })
 

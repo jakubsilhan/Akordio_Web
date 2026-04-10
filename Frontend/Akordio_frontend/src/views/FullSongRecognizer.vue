@@ -359,7 +359,7 @@ async function cancelTaskById(taskId) {
   if (!taskId) return
 
   try {
-    const response = await apiService.post(`/tasks/${taskId}/cancel`)
+    const response = await apiService.post(`tasks/${taskId}/cancel`)
     console.log('Task cancelled')
     toast.info(`Task cancelled`)
   } catch (err) {
