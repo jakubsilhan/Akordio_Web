@@ -225,6 +225,7 @@ async function queryAnnotation(annotationId, toastId, processId) {
             closeOnClick: true,
           },
         })
+        taskId.value = null
         break
       }
 
@@ -243,6 +244,7 @@ async function queryAnnotation(annotationId, toastId, processId) {
           closeOnClick: true,
         },
       })
+      taskId.value = null
       break
     }
   }
@@ -289,6 +291,7 @@ async function querySeparation(separationId, toastId, processId) {
           closeOnClick: true,
         },
       })
+      taskId.value = null
       break
     } catch (err) {
       console.error('Polling failed:', err)
@@ -300,6 +303,7 @@ async function querySeparation(separationId, toastId, processId) {
           closeOnClick: true,
         },
       })
+      taskId.value = null
       break
     }
   }
@@ -346,11 +350,15 @@ async function handleArchiveUpload(event) {
   }
 }
 
-async function cancelTaskById(taskId) {
-  if (!taskId) return
+async function cancelTaskById(CancelId) {
+  /**
+   * Cancel task by its ID
+   */
+  if (!CancelId) return
+  taskId.value = null
 
   try {
-    const response = await apiService.post(`tasks/${taskId}/cancel`)
+    const response = await apiService.post(`tasks/${CancelId}/cancel`)
     console.log('Task cancelled')
     toast.info(`Task cancelled`)
   } catch (err) {
