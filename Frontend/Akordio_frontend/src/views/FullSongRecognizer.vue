@@ -1,52 +1,44 @@
 <template>
   <div class="flex flex-col min-h-screen">
     <SmallHeader title="Fullsong Recognizer" />
-
-    <main class="flex-1 p-8 text-center text-[1.2rem]">
+    <main class="flex-1 p-4 sm:p-6 md:p-8 text-center text-base sm:text-lg md:text-[1.2rem]">
       <Toolbar
         :onUploadAudio="handleAudioUpload"
         :onProcess="handleProcess"
         :onDownload="handleDownload"
         :onUploadArchive="handleArchiveUpload"
       />
-
-      <p>
+      <p class="px-2 break-words">
         {{ audioFile?.name || 'No file selected' }}
       </p>
-
       <!-- Audio Player -->
       <audio
         ref="audioplayerRef"
         :src="audioSrc"
         controls
         @timeupdate="onTimeupdate"
-        class="mt-4 mx-auto"
+        class="mt-4 mx-auto w-full max-w-md"
       ></audio>
-
       <!-- Current Chord -->
-      <div class="mt-6 text-4xl font-bold">
+      <div class="mt-6 text-2xl sm:text-3xl md:text-4xl font-bold">
         Current: <br />
         {{ currentChord?.chord || '—' }}
       </div>
-
       <!-- Progress to Next -->
-      <div class="w-full bg-gray-200 rounded-full h-2 mt-2 overflow-hidden">
+      <div class="w-full max-w-md mx-auto bg-gray-200 rounded-full h-2 mt-2 overflow-hidden">
         <div
           class="bg-blue-600 h-full rounded-full transition-all duration-200"
           :style="{ width: progressPercent + '%' }"
         ></div>
       </div>
-
       <!-- Next Chord -->
-      <div class="mt-2 text-gray-600">
+      <div class="mt-2 text-sm sm:text-base text-gray-600">
         Next: <br />
         <span class="font-semibold">{{ nextChord?.chord || '—' }}</span>
       </div>
-
       <!-- Chord Editor -->
-      <ChordEditor class="mt-10" v-model:chords="labFile" />
+      <ChordEditor class="mt-6 sm:mt-8 md:mt-10" v-model:chords="labFile" />
     </main>
-
     <!-- Processing Modal -->
     <Modal
       :show="isModalOpen"
@@ -57,26 +49,25 @@
       <div class="space-y-4">
         <!-- Model choice -->
         <div title="Select the complexity of desired chords">
-          <div class="flex flex-row space-x-2">
-            <label class="block mb-1 font-medium">Model Choice:</label>
+          <div class="flex flex-row items-center space-x-2">
+            <label class="block mb-1 font-medium text-sm sm:text-base">Model Choice:</label>
             <i class="fa fa-question-circle text-gray-300"></i>
           </div>
-          <select v-model="modelChoice" class="border rounded p-2 w-full">
+          <select v-model="modelChoice" class="border rounded p-2 w-full text-sm sm:text-base">
             <option v-for="m in models" :key="m" :value="m">{{ m }}</option>
           </select>
         </div>
-
         <!-- Guitar -->
         <div title="Select wich audio track to filter out">
-          <div class="flex flex-row space-x-2">
-            <label class="block mb-1 font-medium">Separation Choice:</label>
+          <div class="flex flex-row items-center space-x-2">
+            <label class="block mb-1 font-medium text-sm sm:text-base">Separation Choice:</label>
             <i class="fa fa-question-circle text-gray-300"></i>
           </div>
-          <select v-model="separationChoice" class="border rounded p-2 w-full">
+          <select v-model="separationChoice" class="border rounded p-2 w-full text-sm sm:text-base">
             <option v-for="m in separations" :key="m" :value="m">{{ m }}</option>
           </select>
         </div>
-        <p class="p-1 text-white bg-orange-400 rounded">
+        <p class="p-2 sm:p-3 text-sm sm:text-base text-white bg-orange-400 rounded">
           <strong>Warning!</strong> Using audio separation will take more time.
         </p>
       </div>

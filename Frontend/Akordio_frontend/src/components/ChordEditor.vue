@@ -1,11 +1,11 @@
 <template>
-  <div class="flex flex-col w-1/2 h-[50vh] mx-auto border rounded">
-    <textarea class="p-1 h-full" v-model="displayChords" spellcheck="false" />
-    <div class="border-t flex">
-      <p class="text-red-500 ml-1 my-1">{{ warning }}</p>
+  <div class="flex flex-col w-full sm:w-3/4 lg:w-1/2 h-[50vh] mx-auto border rounded">
+    <textarea class="p-2 sm:p-3 flex-1 text-sm sm:text-base resize-none" v-model="displayChords" spellcheck="false" />
+    <div class="border-t flex flex-wrap sm:flex-nowrap items-center gap-2 p-2 h-12 sm:h-14">
+      <p class="text-red-500 text-sm sm:text-base break-words flex-1 min-w-0">{{ warning }}</p>
       <button
         @click="saveEdits"
-        class="ml-auto mr-1 my-1 py-1 px-2 bg-blue-600 text-white rounded hover:bg-blue-500 active:scale-95"
+        class="py-1 px-3 sm:px-4 bg-blue-600 text-white text-sm sm:text-base rounded hover:bg-blue-500 active:scale-95 whitespace-nowrap"
       >
         Save
       </button>

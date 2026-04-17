@@ -1,10 +1,10 @@
 <template>
   <div
-    class="inline-flex justify-center items-center space-x-2 py-4 px-8 border border-black rounded-xl"
+    class="inline-flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-2 py-4 px-4 sm:px-8 border border-black rounded-xl"
   >
     <!-- Upload Audio -->
     <button
-      class="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-500 active:scale-95"
+      class="w-full sm:w-auto py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-500 active:scale-95"
       @click="triggerAudioUpload"
     >
       Upload Audio
@@ -16,25 +16,22 @@
       class="hidden"
       @change="props.onUploadAudio"
     />
-
     <!-- Process -->
     <button
-      class="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-500 active:scale-95"
+      class="w-full sm:w-auto py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-500 active:scale-95"
       @click="props.onProcess"
     >
       Process
     </button>
-
     <button
-      class="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-500 active:scale-95"
+      class="w-full sm:w-auto py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-500 active:scale-95"
       @click="onDownload"
     >
       Download Processed
     </button>
-
     <!-- Upload Archive -->
     <button
-      class="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-500 active:scale-95"
+      class="w-full sm:w-auto py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-500 active:scale-95"
       @click="triggerArchiveUpload"
     >
       Upload Processed
