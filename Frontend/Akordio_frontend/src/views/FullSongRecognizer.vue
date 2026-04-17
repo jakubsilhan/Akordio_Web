@@ -1,52 +1,44 @@
 <template>
   <div class="flex flex-col min-h-screen">
     <SmallHeader title="Fullsong Recognizer" />
-
-    <main class="flex-1 p-8 text-center text-[1.2rem]">
+    <main class="flex-1 p-4 sm:p-6 md:p-8 text-center text-base sm:text-lg md:text-[1.2rem]">
       <Toolbar
         :onUploadAudio="handleAudioUpload"
         :onProcess="handleProcess"
         :onDownload="handleDownload"
         :onUploadArchive="handleArchiveUpload"
       />
-
-      <p>
+      <p class="px-2 break-words">
         {{ audioFile?.name || 'No file selected' }}
       </p>
-
       <!-- Audio Player -->
       <audio
         ref="audioplayerRef"
         :src="audioSrc"
         controls
         @timeupdate="onTimeupdate"
-        class="mt-4 mx-auto"
+        class="mt-4 mx-auto w-full max-w-md"
       ></audio>
-
       <!-- Current Chord -->
-      <div class="mt-6 text-4xl font-bold">
+      <div class="mt-6 text-2xl sm:text-3xl md:text-4xl font-bold">
         Current: <br />
         {{ currentChord?.chord || '—' }}
       </div>
-
       <!-- Progress to Next -->
-      <div class="w-full bg-gray-200 rounded-full h-2 mt-2 overflow-hidden">
+      <div class="w-full max-w-md mx-auto bg-gray-200 rounded-full h-2 mt-2 overflow-hidden">
         <div
           class="bg-blue-600 h-full rounded-full transition-all duration-200"
           :style="{ width: progressPercent + '%' }"
         ></div>
       </div>
-
       <!-- Next Chord -->
-      <div class="mt-2 text-gray-600">
+      <div class="mt-2 text-sm sm:text-base text-gray-600">
         Next: <br />
         <span class="font-semibold">{{ nextChord?.chord || '—' }}</span>
       </div>
-
       <!-- Chord Editor -->
-      <ChordEditor class="mt-10" v-model:chords="labFile" />
+      <ChordEditor class="mt-6 sm:mt-8 md:mt-10" v-model:chords="labFile" />
     </main>
-
     <!-- Processing Modal -->
     <Modal
       :show="isModalOpen"
@@ -57,35 +49,45 @@
       <div class="space-y-4">
         <!-- Model choice -->
         <div title="Select the complexity of desired chords">
-          <div class="flex flex-row space-x-2">
-            <label class="block mb-1 font-medium">Model Choice:</label>
+          <div class="flex flex-row items-center space-x-2">
+            <label class="block mb-1 font-medium text-sm sm:text-base">Model Choice:</label>
             <i class="fa fa-question-circle text-gray-300"></i>
           </div>
-          <select v-model="modelChoice" class="border rounded p-2 w-full">
-            <option v-for="m in models" :key="m" :value="m">{{ m }}</option>
+          <select v-model="modelChoice" class="border rounded p-2 w-full text-sm sm:text-base">
+            <option v-for="m in modelOptions" :key="m.value" :value="m.value">
+              {{ m.label }}
+            </option>
           </select>
+          <p v-if="selectedModelDescription" class="text-xs sm:text-sm text-gray-600 mt-1 text-left pl-2">
+            {{ selectedModelDescription }}
+          </p>
         </div>
 
-        <!-- Guitar -->
-        <div title="Select wich audio track to filter out">
-          <div class="flex flex-row space-x-2">
-            <label class="block mb-1 font-medium">Separation Choice:</label>
+        <!-- Separation choice -->
+        <div title="Select which audio track to filter out">
+          <div class="flex flex-row items-center space-x-2">
+            <label class="block mb-1 font-medium text-sm sm:text-base">Separation Choice:</label>
             <i class="fa fa-question-circle text-gray-300"></i>
           </div>
-          <select v-model="separationChoice" class="border rounded p-2 w-full">
-            <option v-for="m in separations" :key="m" :value="m">{{ m }}</option>
+          <select v-model="separationChoice" class="border rounded p-2 w-full text-sm sm:text-base">
+            <option v-for="s in separationOptions" :key="s.value" :value="s.value">
+              {{ s.label }}
+            </option>
           </select>
+          <p v-if="selectedSeparationDescription" class="text-xs sm:text-sm text-gray-600 mt-1 text-left pb-2 pl-2">
+            {{ selectedSeparationDescription }}
+          </p>
+          <p class="p-2 sm:p-3 text-sm sm:text-base text-white bg-orange-400 rounded">
+            <strong>Warning!</strong> Using audio separation will take more time.
+          </p>
         </div>
-        <p class="p-1 text-white bg-orange-400 rounded">
-          <strong>Warning!</strong> Using audio separation will take more time.
-        </p>
       </div>
     </Modal>
   </div>
 </template>
 
 <script setup>
-import { ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, computed } from 'vue'
 import { apiService } from '@/utils/api'
 import { useLoading } from 'vue-loading-overlay'
 import { useToast } from 'vue-toastification'
@@ -119,10 +121,28 @@ const taskId = ref(null)
 
 // Modal state
 const isModalOpen = ref(false)
-const models = ['majmin', 'majmin7', 'complex']
-const separations = ['none', 'guitar', 'vocals', 'both']
-const modelChoice = ref(models[0])
-const separationChoice = ref(separations[0])
+const modelOptions = [
+  { value: 'majmin', label: 'majmin', description: 'Basic major and minor chords only' },
+  { value: 'majmin7', label: 'majmin7', description: 'Major, minor, and 7th chords (maj7, min7 and 7)' },
+  { value: 'complex', label: 'complex', description: 'All chord types (augmented, diminished, sus, etc.)' }
+]
+
+const separationOptions = [
+  { value: 'none', label: 'none', description: 'No audio separation' },
+  { value: 'guitar', label: 'guitar', description: 'Remove guitar track' },
+  { value: 'vocals', label: 'vocals', description: 'Remove vocals, keep instruments' },
+  { value: 'both', label: 'both', description: 'Remove both guitar and vocals' }
+]
+const modelChoice = ref(modelOptions[0].value)
+const separationChoice = ref(separationOptions[0].value)
+
+const selectedModelDescription = computed(() => 
+  modelOptions.find(m => m.value === modelChoice.value)?.description
+)
+
+const selectedSeparationDescription = computed(() => 
+  separationOptions.find(s => s.value === separationChoice.value)?.description
+)
 
 onUnmounted(() => {
   currentProcessId.value++ // Kill any current processing
@@ -234,6 +254,7 @@ async function queryAnnotation(annotationId, toastId, processId) {
             closeOnClick: true,
           },
         })
+        taskId.value = null
         break
       }
 
@@ -252,6 +273,7 @@ async function queryAnnotation(annotationId, toastId, processId) {
           closeOnClick: true,
         },
       })
+      taskId.value = null
       break
     }
   }
@@ -298,6 +320,7 @@ async function querySeparation(separationId, toastId, processId) {
           closeOnClick: true,
         },
       })
+      taskId.value = null
       break
     } catch (err) {
       console.error('Polling failed:', err)
@@ -309,6 +332,7 @@ async function querySeparation(separationId, toastId, processId) {
           closeOnClick: true,
         },
       })
+      taskId.value = null
       break
     }
   }
@@ -355,11 +379,15 @@ async function handleArchiveUpload(event) {
   }
 }
 
-async function cancelTaskById(taskId) {
-  if (!taskId) return
+async function cancelTaskById(CancelId) {
+  /**
+   * Cancel task by its ID
+   */
+  if (!CancelId) return
+  taskId.value = null
 
   try {
-    const response = await apiService.post(`tasks/${taskId}/cancel`)
+    const response = await apiService.post(`tasks/${CancelId}/cancel`)
     console.log('Task cancelled')
     toast.info(`Task cancelled`)
   } catch (err) {
