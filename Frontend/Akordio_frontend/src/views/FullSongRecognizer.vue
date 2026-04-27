@@ -269,7 +269,7 @@ async function queryAnnotation(annotationId, toastId, processId) {
     } catch (err) {
       console.error('Polling failed:', err)
       toast.update(toastId, {
-        content: 'Checking for annotation result failed!',
+        content: 'Checking for annotation result failed! More details in console.',
         options: {
           type: 'error',
           timeout: 5000,
@@ -328,7 +328,7 @@ async function querySeparation(separationId, toastId, processId) {
     } catch (err) {
       console.error('Polling failed:', err)
       toast.update(toastId, {
-        content: 'Checking for separation result failed!',
+        content: 'Checking for separation result failed! More details in console.',
         options: {
           type: 'error',
           timeout: 5000,
