@@ -19,6 +19,10 @@ export function useUpload() {
       } else if (
         filename.endsWith('.mp3') ||
         filename.endsWith('.wav') ||
+        filename.endsWith('.m4a') ||
+        filename.endsWith('.flac') ||
+        filename.endsWith('.aac') ||
+        filename.endsWith('.wma') ||
         filename.endsWith('.ogg')
       ) {
         audioFile = await entry.async('blob')
