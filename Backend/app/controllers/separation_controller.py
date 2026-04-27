@@ -6,6 +6,8 @@ from app.tools.tasks import run_separation_task
 from app.tools.redis_client import save_task
 from celery.result import AsyncResult
 
+from . import ALLOWED_EXTENSIONS
+
 bp = Blueprint("separation", __name__, url_prefix="/separation")
 
 INPUT_DIR = "/tmp/akordio_audio/separation/input"
@@ -51,6 +53,8 @@ def filter():
     file = request.files["audio"]
     if not file.filename or file.filename == "":
         return jsonify({"error": "No selected file!"}), 400
+    if not any(file.filename.lower().endswith(ext) for ext in ALLOWED_EXTENSIONS):
+        return jsonify({"error": "Invalid file type. Allowed: mp3, wav, m4a, flac, ogg, aac"}), 400
 
     # Check for model choice
     model_choice = request.form.get("separation_choice")
@@ -66,8 +70,7 @@ def filter():
     output_path = os.path.join(OUTPUT_DIR, unique_filename)
     try:
         # Write audio to temp file
-        with open(input_path, 'wb') as tmp:
-            tmp.write(file.read())
+        file.save(input_path)
             
         # Create a celery task
         task = run_separation_task.delay(input_path, output_path, model_choice) # type: ignore

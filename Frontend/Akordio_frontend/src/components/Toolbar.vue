@@ -11,7 +11,7 @@
     </button>
     <input
       type="file"
-      accept="audio/*"
+      accept=".mp3,.wav,.m4a,.flac,.ogg,.aac,.wma"
       ref="audioInput"
       class="hidden"
       @change="props.onUploadAudio"

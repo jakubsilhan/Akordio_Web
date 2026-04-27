@@ -7,10 +7,20 @@ from app.controllers.online_controller import bp as online_bp
 from app.controllers.separation_controller import bp as separation_bp
 from app.controllers.cancel_controller import bp as cancel_bp
 from app.celery_worker import celery_init_app
+from werkzeug.exceptions import RequestEntityTooLarge
 
+MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
 
 def create_app():
     app = Flask(__name__)
+
+    app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+
+    @app.errorhandler(RequestEntityTooLarge)
+    def handle_file_too_large(e):
+        return {
+            "error": f"File too large. Maximum size is {MAX_FILE_SIZE / 1024 / 1024:.0f}MB"
+        }, 413
 
     # Allow origins
     # CORS(app)

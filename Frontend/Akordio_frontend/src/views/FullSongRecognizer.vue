@@ -180,8 +180,10 @@ async function confirmProcess() {
     })
     taskId.value = annotationTask.task_id
   } catch (error) {
-    console.error('Annotation start failed:', error.message)
-    toast.error('Failed to start annotation!')
+    loader.hide()
+    const errorMsg = error.response?.data?.error || 'Failed to start annotation!'
+    console.error('Annotation start failed:', errorMsg)
+    toast.error(errorMsg)
     return
   }
   console.log('Annotation task sent!')
@@ -205,6 +207,7 @@ async function confirmProcess() {
   sepData.append('audio', audioFile.value)
   sepData.append('separation_choice', separationChoice.value)
 
+  loader.hide()
   // Request separation
   try {
     const separationTask = await apiService.post('separation/filter', sepData, {
@@ -212,12 +215,12 @@ async function confirmProcess() {
     })
     taskId.value = separationTask.task_id
   } catch (error) {
-    console.error('Separation start failed:', error.message)
-    toast.error('Failed to start separation!')
+    const errorMsg = error.response?.data?.error || 'Failed to start separation!'
+    console.error('Separation start failed:', errorMsg)
+    toast.error(errorMsg)
     return
   }
   console.log('Task sent!')
-  loader.hide()
 
   // Querying
   const sepToastId = toast.info('Separation in progress!', {

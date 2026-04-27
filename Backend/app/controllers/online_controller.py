@@ -1,6 +1,8 @@
 from flask import Blueprint, jsonify, request, current_app
 from app.extensions import get_online_service
 
+from . import ALLOWED_EXTENSIONS
+
 bp = Blueprint("online", __name__, url_prefix="/online")
 
 @bp.route("/recognize", methods=["POST"])
@@ -43,6 +45,8 @@ def recognize():
         file = request.files["audio"]
         if not file.filename or file.filename == "":
             return jsonify({"error": "No selected file"}), 400
+        if not any(file.filename.lower().endswith(ext) for ext in ALLOWED_EXTENSIONS):
+          return jsonify({"error": "Invalid file type. Allowed: mp3, wav, m4a, flac, ogg, aac"}), 400
 
         model_choice = request.form.get("model_choice")
         if model_choice not in ["majmin", "majmin7", "complex"]:

@@ -7,6 +7,8 @@ from app.tools.tasks import run_fullsong_task
 from app.tools.redis_client import save_task
 from celery.result import AsyncResult
 
+from . import ALLOWED_EXTENSIONS
+
 bp = Blueprint("fullsong", __name__, url_prefix="/fullsong")
 
 SHARED_TEMP_DIR = "/tmp/akordio_audio/annotation"
@@ -49,6 +51,8 @@ def annotate():
     file = request.files["audio"]
     if not file.filename or file.filename == "":
         return jsonify({"error": "No selected file!"}), 400
+    if not any(file.filename.lower().endswith(ext) for ext in ALLOWED_EXTENSIONS):
+        return jsonify({"error": "Invalid file type. Allowed: mp3, wav, m4a, flac, ogg, aac"}), 400
 
     # Check for model choice
     model_choice = request.form.get("model_choice")
@@ -60,8 +64,7 @@ def annotate():
     temp_path = os.path.join(SHARED_TEMP_DIR, unique_filename)
     try:
         # Write audio to temp file
-        with open(temp_path, 'wb') as tmp:
-            tmp.write(file.read())
+        file.save(temp_path)
             
         # Create a celery task
         task = run_fullsong_task.delay(temp_path, model_choice) # type: ignore
