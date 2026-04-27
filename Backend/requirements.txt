@@ -15,3 +15,5 @@ soundfile
 celery
 redis
 scipy
+pytest
+pytest-flask
